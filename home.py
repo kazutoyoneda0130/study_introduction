@@ -1,5 +1,4 @@
 import streamlit as st
-import pulp
 import sys
 import io
 
@@ -8,7 +7,7 @@ st.title("数理最適化について")
 st.header("数理最適化とは")
 st.write("""
 数理最適化とは一言でいうと、「数学を使って一番いい答えを見つける技術」です。
-条件（制約条件）があって、その中で目的（利益最大化・コスト最小化など）を達成したい時に使用できます。
+条件（制約条件）があって、その中で目的（利益最大化・コスト最小化など）を達成したい時に使用出来ます。
 例えば、
 - スーパーで食材を買う時に、予算内で一番多くの食材を買いたい
 - 旅行計画で、移動時間を最小限に抑えつつ訪れたい観光地を全て回りたい
@@ -20,7 +19,7 @@ st.header("数理最適化とPythonの関係について")
 st.write("""
 Pythonは数理最適化のを解くためのライブラリが沢山提供されています。
 例えば、`PuLP`、`SciPy.optimize`、`OR-Tools`などがあります。
-これらを使うことで、複雑な最適化問題を簡単に解くことができます。
+これらを使うことで、複雑な最適化問題を解くことができます。
 """)
 
 st.header("数理最適化問題の例とその問題のPythonでの実行例")
@@ -29,7 +28,7 @@ st.write("""
 - 商品Iの利益は1個あたり3万円、商品Jの利益は1個あたり2万円
 - 商品Iを1個生産するのに資源Aが2kg、資源Bが1kg必要
 - 商品Jを1個生産するのに資源Aが1kg、資源Bが1kg必要
-- 資源Aは合計で100kgまで、資源Bは合計で80kgまで使用可能
+- 資源Aは合計で100kgまで、資源Bは合計で80kgまで使用可能である。
 """)
 st.markdown("### 数式での記述")
 st.markdown("### 目的関数")
@@ -90,10 +89,3 @@ if st.button("コードを実行する"):
         sys.stdout = old_stdout
 
     st.text_area("実行結果", output, height=200)
-
-st.header("参考URL")
-st.markdown("""
-- [PuLP公式ドキュメント](https://coin-or.github.io/pulp/)
-- [SciPy.optimize](https://docs.scipy.org/doc/scipy/reference/optimize.html)
-- [CVXPY公式サイト](https://www.cvxpy.org/en/stable/)
-""")
