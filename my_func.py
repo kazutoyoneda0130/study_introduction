@@ -9,7 +9,6 @@ from matplotlib import colors as mcolors
 colors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS) # type: ignore
 
 class CreateRideShareProblemInstance:
-
     def __init__(self) -> None:
         self.car_num: int = 0
         self.car_cap: int = 0
@@ -46,7 +45,7 @@ class CreateRideShareProblemInstance:
                for t_name, t_coordinate in self.coordinates_dict.items()
                if s_name != t_name}
 
-    def display(self):
+    def display(self) -> None:
         self.G=nx.DiGraph()
         self.node_color = []
         for node_name,_ in self.coordinates_dict.items():
