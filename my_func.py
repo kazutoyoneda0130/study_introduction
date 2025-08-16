@@ -1,12 +1,10 @@
 import random
-import matplotlib.colors as mcolors
 import networkx as nx
 import numpy as np
-import pandas as pd
 import pulp
+import itertools
 from matplotlib import colors as mcolors
-
-colors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS) # type: ignore
+import re
 
 class CreateRideShareProblemInstance:
     def __init__(self) -> None:
@@ -15,6 +13,7 @@ class CreateRideShareProblemInstance:
         self.req_num: int = 0
         self.seed: int = 0
         self.form: str = ""
+        self.req_list: list = []
         self.req_node_list = []
         self.car_node_list = []
         self.coordinates_dict = {}
@@ -107,6 +106,22 @@ class MulticapRideshareProblem:
         print(f'ノードの訪問順序インデックス集合 : {self.N}')
         print(f'車の初期位置を訪れる順番の集合 : {self.E}')
         print('=' * 50)
+
+    # チェック関数
+    def check_request_order(self,rout_list):
+        positions = {elem: i for i, elem in enumerate(rout_list)}
+
+        results = True
+        for rid in self.R:
+            s_idx = positions.get(f"{rid}_s")
+            t_idx = positions.get(f"{rid}_t")
+            if s_idx is not None and t_idx is not None:
+                if s_idx > t_idx:
+                    results = False
+        return results
+
+    def calc_distance(self,node1, node2):
+        return self.w_dist.get((node1, node2), float('inf'))
 
     # 数理モデルの構築
     def build_model(self) -> None:
@@ -238,6 +253,43 @@ class MulticapRideshareProblem:
             for i in self.D:
                 self.model += self.ziuk[(i,f"d{i}","0")] == 1
 
+        if self.form == "$m_{Pi}$":
+            self.weight_dict = {}
+
+            for d in self.D:
+                d = f'd{d}'
+                for req_list in itertools.combinations(self.R, self.car_cap):
+                    self.weight_dict[d, *req_list] = [[], 0]
+                    req_node_list = [f"{r}_s" for r in req_list] + [f"{r}_t" for r in req_list]
+                    req_node_permutation_list = list(itertools.permutations(req_node_list, len(req_node_list)))
+                    for req_node_permutation in req_node_permutation_list:
+                        if self.check_request_order(req_node_permutation):
+                            dist = self.w_dist[(d, req_node_permutation[0])]
+                            for i in range(len(req_node_permutation)-1):
+                                dist += self.w_dist[(req_node_permutation[i], req_node_permutation[i+1])]
+                            if dist < self.weight_dict[d, *req_list][1] or self.weight_dict[d, *req_list][1] == 0:
+                                self.weight_dict[d, *req_list][0] = req_node_permutation
+                                self.weight_dict[d, *req_list][1] = dist
+
+            self.w_dist = {k: v[1] for k, v in self.weight_dict.items()}
+            ### 変数の定義 ###
+            self.mPi = pulp.LpVariable.dicts("mPi", [k for k in self.w_dist.keys()], cat="Binary")
+            ### 目的関数の定義 ###
+            self.model += pulp.lpSum([self.mPi[cor]*dist for cor,dist in self.w_dist.items()])
+            ### 制約式の定義 ###
+            if self.car_cap == 2:
+                for _,i in enumerate(self.D):
+                    self.model += pulp.lpSum([self.mPi[(f"d{i}",r_s,r_f)] for p,r_s in enumerate(self.R) for q,r_f in enumerate(self.R) if p < q]) == 1
+                for a,r in enumerate(self.R):
+                    self.model += pulp.lpSum([self.mPi[(f"d{i}",r,r_f)] for q,r_f in enumerate(self.R) for i in self.D if a < q] + [self.mPi[(f"d{i}",r_s,r)] for p,r_s in enumerate(self.R) for i in self.D if p < a]) == 1
+            if self.car_cap == 3:
+                for _,i in enumerate(self.D):
+                    self.model += pulp.lpSum([self.mPi[(f"d{i}",r_s,r_f,r_l)] for p,r_s in enumerate(self.R) for q,r_f in enumerate(self.R) for r,r_l in enumerate(self.R) if p < q < r]) == 1
+                for r,r_l in enumerate(self.R):
+                    self.model += pulp.lpSum([self.mPi[(f"d{i}",r_s,r_f,r_l)] for q,r_f in enumerate(self.R) for p,r_s in enumerate(self.R) for i in self.D if p < q < r] +
+                                             [self.mPi[(f"d{i}",r_s,r_l,r_f)] for q,r_f in enumerate(self.R) for p,r_s in enumerate(self.R) for i in self.D if p < r < q] +
+                                             [self.mPi[(f"d{i}",r_l,r_s,r_f)] for q,r_f in enumerate(self.R) for p,r_s in enumerate(self.R) for i in self.D if r < p < q]) == 1
+
     # 数理モデルの実行
     def solve(self) -> None:
         solver = pulp.PULP_CBC_CMD(msg=False)
@@ -249,23 +301,34 @@ class MulticapRideshareProblem:
         self.node_colors = []
 
         # 色リスト（車ごとに使う色）
-        colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink']
-
+        colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS))
         # 車ごとの経路を格納する辞書 (車ノード: [(u,v), (u,v), ...])
         routes = {f'd{i}': [] for i in self.D}
 
-        # まずxuvの値が1のアークを収集し、どの車の経路か判別
-        for car in routes.keys():
-            current_node = car
-            while True:
-                # current_nodeから出るアークで変数値が1のものを探す
-                next_edge = [ (u,v) for (u,v) in self.xuv.keys()
-                               if u == current_node and self.xuv[(u,v)].varValue > 0 and not v.startswith('d')]
-                if not next_edge:
-                    break
-                # 次のノードを取得
-                routes[car].append(next_edge[0])
-                current_node = next_edge[0][1]
+        if self.form == "$m_{Pi}$":
+            selected_vars = [var for var in self.model.variables() if var.varValue == 1 and var.name.startswith("mPi")]
+
+            for var in selected_vars:
+                #print(var.name, var.varValue)
+                # 正規表現でタプル内の要素を抽出
+                elements = re.findall(r"'(.*?)'", var.name)
+                route_list = [elements[0]] + list(self.weight_dict[tuple(elements)][0])
+                routes[elements[0]] = [(route_list[i],route_list[i+1]) for i in range(len(route_list)-1)]
+
+        else:
+
+            # まずxuvの値が1のアークを収集し、どの車の経路か判別
+            for car in routes.keys():
+                current_node = car
+                while True:
+                    # current_nodeから出るアークで変数値が1のものを探す
+                    next_edge = [ (u,v) for (u,v) in self.xuv.keys()
+                                   if u == current_node and self.xuv[(u,v)].varValue > 0 and not v.startswith('d')]
+                    if not next_edge:
+                        break
+                    # 次のノードを取得
+                    routes[car].append(next_edge[0])
+                    current_node = next_edge[0][1]
         # グラフにアーク追加＆色設定
         for i, car in enumerate(routes.keys()):
             color = colors[i % len(colors)]
@@ -278,4 +341,3 @@ class MulticapRideshareProblem:
                     self.node_colors.append('skyblue')
                 if v[-1].endswith('t'):
                     self.node_colors.append('lightgreen')
-

@@ -9,8 +9,9 @@ import my_func as my_func
 form_dict = {
     "定式化1": "$x_{uv},z_{uk},a_{ri}$",
     "定式化2": "$x_{uv},z_{uk}$",
-    "定式化3": "$x_{uv},z_{iuk}$"}
-
+    "定式化3": "$x_{uv},z_{iuk}$",
+    "定式化4": "$m_{Pi}$"
+}
 
 st.title("研究内容")
 # 研究内容の概要をPDFファイルを埋め込んで表示
