@@ -1,10 +1,14 @@
+import itertools
 import random
+import re
+
 import networkx as nx
 import numpy as np
 import pulp
-import itertools
+import matplotlib.pyplot as plt
+from datetime import datetime
 from matplotlib import colors as mcolors
-import re
+
 
 class CreateRideShareProblemInstance:
     def __init__(self) -> None:
@@ -19,12 +23,11 @@ class CreateRideShareProblemInstance:
         self.coordinates_dict = {}
         self.w_dist = {}
 
-    def set_data(self, car_num, car_cap, req_num, seed, form) -> None:
+    def set_data(self, car_num, car_cap, req_num, seed) -> None:
         self.car_num = car_num
         self.car_cap = car_cap
         self.req_num = req_num
         self.seed = seed
-        self.form = form
 
     def create(self, randrange=(0, 100)) -> None:
         # 再現性確保
@@ -341,3 +344,30 @@ class MulticapRideshareProblem:
                     self.node_colors.append('skyblue')
                 if v[-1].endswith('t'):
                     self.node_colors.append('lightgreen')
+
+def create_instance(car_num, car_cap, req_num, seed) -> tuple:
+    instance = CreateRideShareProblemInstance()
+    instance.set_data(car_num=car_num, car_cap=car_cap, req_num=req_num, seed=seed)
+    instance.create(randrange=(0, 100))
+    instance.display()
+    fig, ax = plt.subplots(figsize=(12,12))
+    nx.draw(instance.G, pos=instance.coordinates_dict, with_labels = True, node_size=300, font_size=8, node_color=instance.node_color)
+    return instance, fig, ax
+
+def create_solution(instance, car_num, car_cap, req_num, form, display_flag=True) -> tuple:
+    sol = MulticapRideshareProblem()
+    sol.set_data(car_num,car_cap,req_num,instance.w_dist,instance.coordinates_dict,seed=instance.seed,form=form)
+    #　計算時間の測定
+    start = datetime.now()
+    sol.build_model()
+    sol.solve()
+    end = datetime.now()
+    solve_time = (end - start).total_seconds()
+    if display_flag:
+        # 結果の図示
+        sol.display()
+        fig, ax = plt.subplots(figsize=(12,12))
+        nx.draw(sol.G, pos=instance.coordinates_dict, with_labels = True, node_size=300, font_size=8, node_color=sol.node_colors, edge_color=sol.edge_colors)
+        return sol, fig, ax, solve_time
+    else:
+        return sol, solve_time

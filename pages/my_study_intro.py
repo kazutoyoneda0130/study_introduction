@@ -1,4 +1,6 @@
 import base64
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import streamlit as st
@@ -43,28 +45,26 @@ if st.toggle('問題例作成'):
              つまり、今回の入力では車の数が{car_num}、容量が{car_cap}であるため、リクエスト数は{req_num}となります。
              """)
 
-    if car_num * car_cap < req_num:
-        st.error("車の数と容量の積はリクエストの数以上でなければなりません。")
-    else:
-        instance = my_func.CreateRideShareProblemInstance()
-        instance.set_data(car_num=car_num, car_cap=car_cap, req_num=req_num, seed=seed, form="example")
-        instance.create(randrange=(0, 100))
-        instance.display()
-        fig, ax = plt.subplots(figsize=(12,12))
-        nx.draw(instance.G, pos=instance.coordinates_dict, with_labels = True, node_size=300, font_size=8, node_color=instance.node_color)
-        st.pyplot(fig)
+    instance, fig, ax = my_func.create_instance(car_num, car_cap, req_num, seed)
+    st.pyplot(fig)
 
     st.header("解の作成")
     if st.toggle('ルートの作成'):
-        form_options = st.radio("定式化の種類を選択",
-                                form_dict.keys(),
+        st.write("#### 定式化を選択してください。")
+        form_options = st.radio("",
+                                list(form_dict.keys()) +["すべてを実行し、計算時間を比較"],
                                 horizontal=True)
-        form = form_dict[form_options]
-        sol = my_func.MulticapRideshareProblem()
-        sol.set_data(car_num,car_cap,req_num,instance.w_dist,instance.coordinates_dict,seed=instance.seed,form=form)
-        sol.build_model()
-        sol.solve()
-        sol.display()
-        fig, ax = plt.subplots(figsize=(12,12))
-        nx.draw(sol.G, pos=instance.coordinates_dict, with_labels = True, node_size=300, font_size=8, node_color=sol.node_colors, edge_color=sol.edge_colors)
-        st.pyplot(fig)
+        if form_options == "すべてを実行し、計算時間を比較":
+            for form in reversed(list(form_dict.keys())):
+                if form == "定式化4":
+                    # 結果の図示
+                    sol, fig, ax, solve_time = my_func.create_solution(instance, car_num, car_cap, req_num, form=form_dict[form], display_flag=True)
+                    st.pyplot(fig)
+                else:
+                    sol, solve_time = my_func.create_solution(instance, car_num, car_cap, req_num, form=form_dict[form], display_flag=False)
+                st.write(f"{form} 実行時間:", solve_time, "秒")
+        else:
+            form = form_dict[form_options]
+            sol, fig, ax, solve_time = my_func.create_solution(instance, car_num, car_cap, req_num, form, display_flag=True)
+            st.pyplot(fig)
+            st.write("実行時間:", solve_time, "秒")
