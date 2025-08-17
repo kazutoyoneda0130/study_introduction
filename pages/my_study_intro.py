@@ -29,7 +29,8 @@ if st.toggle('問題例作成'):
     with col1:
         car_num = st.number_input('車の数',step=1,min_value=1)
     with col2:
-        car_cap = st.number_input('車の容量',step=1,min_value=1)
+        #car_cap = st.number_input('車の容量',step=1,min_value=1)
+        car_cap = st.radio("車の容量", [2, 3], horizontal=True)
     # with col3:
     #     req_num = st.number_input('リクエストの数',step=1,min_value=1)
     with col4:
@@ -38,7 +39,7 @@ if st.toggle('問題例作成'):
     req_num = car_num * car_cap
 
     st.write(f"""
-             今回のコードでは「リクエスト数=車の数×車の容量」とします。
+             「リクエスト数=車の数×車の容量」とします。
              つまり、今回の入力では車の数が{car_num}、容量が{car_cap}であるため、リクエスト数は{req_num}となります。
              """)
 
@@ -48,10 +49,16 @@ if st.toggle('問題例作成'):
     st.header("解の作成")
     if st.toggle('ルートの作成'):
         st.write("#### 定式化を選択")
+        st.write("""
+                 定式化を選択すると、作成されたルートとその計算時間を表示します。
+                 以下に示している定式化は全て厳密解を求めるものなので、得られるルートは全く同じですが、計算時間が異なります。
+                 - 定式化1,2,3は車の数と容量の積が6以上になると計算時間が増大する傾向にあります。
+                 - 定式化4は車の数と容量の積が20程度でも計算時間が増大することなく解を求めることができます。
+                 """)
         form_options = st.radio("",
                                 list(form_dict.keys()) +["すべてを実行し、計算時間を比較"],
                                 horizontal=True)
-        real_time_display, create_char = st.columns([1,1])
+        real_time_display, create_char = st.columns([1,2])
         if form_options == "すべてを実行し、計算時間を比較":
             time_dict = {k:0 for k in form_dict.keys()}
             for form in form_dict.keys():
@@ -67,3 +74,16 @@ if st.toggle('問題例作成'):
             sol, fig, ax, solve_time = my_func.create_solution(instance, car_num, car_cap, req_num, form, display_flag=True)
             st.pyplot(fig)
             st.write("実行時間:", solve_time, "秒")
+
+if st.toggle("備考を表示"):
+    st.header("備考")
+    st.write("""
+             #### 実際の研究で行っていたこと
+             - 研究内容
+                - 「リクエスト数=車の数×車の容量」という条件が成り立たない問題設定への拡張
+                - 各定式化の変数や制約式の数の比較
+                - 先行研究で示されていた近似解を求めるアルゴリズムの精度検証
+            - プログラム
+                - 大学院在学中に使用していたソルバーのライセンスが切れてしまっているため、別のソルバーを使用するためにコードを一部書き直した
+                - エクセルへの結果書き出し
+            """)

@@ -381,4 +381,11 @@ def create_bar_chart(time_dict) -> px.bar: #type: ignore
         labels={'x': '定式化', 'y': '計算時間 (秒)'},
         title='定式化ごとの計算時間比較'
     )
+    fig.update_layout(
+        title={
+            'text': '定式化ごとの計算時間比較',
+            'x': 0.5,  # 中央揃え
+            'xanchor': 'center'
+        }
+    )
     return fig
