@@ -72,7 +72,7 @@ if st.toggle('問題例作成'):
             form = form_dict[form_options]
             sol, fig, ax, solve_time = my_func.create_solution(instance, car_num, car_cap, req_num, form, display_flag=True)
             st.pyplot(fig)
-            st.write("実行時間:", solve_time, "秒")
+            st.write(f"{form_options} 実行時間:", solve_time, "秒")
 
 if st.toggle("備考を表示"):
     st.header("備考")
