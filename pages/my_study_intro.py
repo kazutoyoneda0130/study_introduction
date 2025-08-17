@@ -21,9 +21,8 @@ with open(pdf_path, "rb") as f:
 encoded_pdf = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="800" height="600" type="application/pdf">'
 st.markdown(encoded_pdf, unsafe_allow_html=True)
 
-st.header("問題例の作成")
-
 if st.toggle('問題例作成'):
+    st.header("問題例の作成")
     # col1,col2,col3,col4 = st.columns([1,1,1,1])
     col1,col2,col4 = st.columns([1,1,1])
     with col1:
@@ -46,8 +45,8 @@ if st.toggle('問題例作成'):
     instance, fig, ax = my_func.create_instance(car_num, car_cap, req_num, seed)
     st.pyplot(fig)
 
-    st.header("解の作成")
     if st.toggle('ルートの作成'):
+        st.header("解の作成")
         st.write("#### 定式化を選択")
         st.write("""
                  定式化を選択すると、作成されたルートとその計算時間を表示します。
