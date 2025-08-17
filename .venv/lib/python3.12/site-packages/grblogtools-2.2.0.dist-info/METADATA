@@ -1,0 +1,125 @@
+Metadata-Version: 2.1
+Name: grblogtools
+Version: 2.2.0
+Summary: Gurobi log file tools for parsing and exploring data
+Home-page: https://github.com/Gurobi/grblogtools
+Author: Gurobi Optimization, LLC
+Author-email: support@gurobi.com
+License: Apache-2.0
+Platform: any
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: ipywidgets
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: plotly
+Requires-Dist: xlsxwriter
+
+# GRBlogtools
+
+[![PyPI](https://img.shields.io/pypi/v/grblogtools?label=PyPI)](https://pypi.python.org/pypi/grblogtools)
+[![License](https://img.shields.io/github/license/Gurobi/grblogtools?color=blue&label=License)](https://github.com/Gurobi/grblogtools/blob/master/LICENSE)
+[![Test Python Package](https://github.com/Gurobi/grblogtools/actions/workflows/python-tox.yml/badge.svg?branch=master)](https://github.com/Gurobi/grblogtools/actions/workflows/python-tox.yml)
+
+Extract information from Gurobi log files and generate [pandas DataFrames](https://pandas.pydata.org/) or Excel worksheets for further processing. Also includes a wrapper for out-of-the-box interactive visualizations using the plotting library [Plotly](https://plotly.com/python/).
+
+![performance plot](https://github.com/Gurobi/grblogtools/raw/master/assets/performance-plot.png)
+
+# Installation
+
+```
+python -m pip install grblogtools
+```
+
+It is recommended to prepend the `pip install` command with `python -m` to ensure that the package is installed using the correct Python version currently active in your environment.
+
+See [CHANGELOG](https://github.com/Gurobi/grblogtools/blob/master/CHANGELOG.md) for added, removed or fixed functionality.
+
+# Usage
+
+First, you need a set of Gurobi log files to compare, e.g.,
+  - results from several model instances
+  - comparisons of different parameter settings
+  - performance variability experiments involving multiple random seed runs
+  - ...
+
+You may also use the provided [grblogtools.ipynb notebook](https://github.com/Gurobi/grblogtools/blob/master/grblogtools.ipynb) with the [example data set](https://github.com/Gurobi/grblogtools/tree/master/data) to get started.
+Additionally, there is a [Gurobi TechTalk demonstrating how to use grblogtools (YouTube)](https://youtu.be/wbg4Zr_A1s8):
+
+[![](https://github.com/Gurobi/grblogtools/raw/master/assets/youtube-thumbnail.png)](https://youtu.be/wbg4Zr_A1s8)
+
+## Pandas/Plotly
+1. parse log files:
+    ```Python
+    import grblogtools as glt
+
+    results = glt.parse(["run1/*.log", "run2/*.log"])
+    summary = results.summary()
+    nodelog_progress = results.progress("nodelog")
+    ```
+    Depending on your requirements, you may need to filter or modify the resulting DataFrames.
+
+2. draw interactive charts, preferably in a [Jupyter Notebook](https://jupyter.org/):
+
+    - final results from the individual runs:
+    ```Python
+    glt.plot(summary, type="box")
+    ```
+
+    - progress charts for the individual runs:
+    ```Python
+    glt.plot(nodelog_progress, y="Gap", color="Log", type="line")
+    ```
+
+    - progress of the norel heuristic (note, the time recorded here is since the start of norel, and does not include presolve + read time):
+    ```Python
+    glt.plot(results.progress("norel"), x="Time", y="Incumbent", color="Log", type="line")
+    ```
+
+    These are just examples using the [Plotly Python library](https://plotly.com/python/) - of course, any other plotting library of your choice can be used to work with these DataFrames.
+
+## Excel
+Convert your log files to Excel worksheets right on the command-line:
+
+```
+python -m grblogtools myrun.xlsx data/*.log
+```
+
+List all available options and how to use the command-line tool:
+
+```
+python -m grblogtools --help
+```
+
+## Rename log files
+The command line tool can also rename log files according to the parameters set and model solved in a given run. This is useful if your log files do not have a consistent naming scheme, or if multiple runs are logged per file and you want to extract the individual runs.
+
+For example:
+
+```
+python -m grblogtools --write-to-dir nicenames summary.xlsx tests/assets/combined/*.log
+```
+
+separates logs for individual runs in the input files and writes copies to the 'nicenames' folder with a consistent naming scheme:
+
+```
+> ls nicenames
+912-MIPFocus1-Presolve1-TimeLimit600-glass4-0.log
+912-MIPFocus1-Presolve1-TimeLimit600-glass4-1.log
+912-MIPFocus1-Presolve1-TimeLimit600-glass4-2.log
+912-MIPFocus2-Presolve1-TimeLimit600-glass4-0.log
+912-MIPFocus2-Presolve1-TimeLimit600-glass4-1.log
+912-MIPFocus2-Presolve1-TimeLimit600-glass4-2.log
+912-Presolve1-TimeLimit600-glass4-0.log
+912-Presolve1-TimeLimit600-glass4-1.log
+912-Presolve1-TimeLimit600-glass4-2.log
+```
