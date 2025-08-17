@@ -1,14 +1,15 @@
+import colorsys
 import itertools
 import random
 import re
+from datetime import datetime
 
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-import pulp
-import matplotlib.pyplot as plt
-from datetime import datetime
-from matplotlib import colors as mcolors
 import plotly.express as px
+import pulp
+from matplotlib import colors as mcolors
 
 
 class CreateRideShareProblemInstance:
@@ -112,7 +113,7 @@ class MulticapRideshareProblem:
         print('=' * 50)
 
     # チェック関数
-    def check_request_order(self,rout_list):
+    def check_request_order(self,rout_list) -> bool:
         positions = {elem: i for i, elem in enumerate(rout_list)}
 
         results = True
@@ -124,7 +125,7 @@ class MulticapRideshareProblem:
                     results = False
         return results
 
-    def calc_distance(self,node1, node2):
+    def calc_distance(self,node1, node2) -> float:
         return self.w_dist.get((node1, node2), float('inf'))
 
     # 数理モデルの構築
@@ -305,7 +306,19 @@ class MulticapRideshareProblem:
         self.node_colors = []
 
         # 色リスト（車ごとに使う色）
-        colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS))
+        # colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS))
+        # 色リスト作成
+        color_dict = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
+
+        def is_light(color_code, threshold=0.7):
+            """色が白っぽいかどうか判定"""
+            rgb = mcolors.to_rgb(color_code)  # (R,G,B) 0-1 に変換
+            _, l, _ = colorsys.rgb_to_hls(*rgb)  # HLSに変換
+            return l > threshold  # 明度が閾値以上なら白系とみなす
+
+        # 白系を除外
+        colors = [name for name, code in color_dict.items() if not is_light(code)]
+
         # 車ごとの経路を格納する辞書 (車ノード: [(u,v), (u,v), ...])
         routes = {f'd{i}': [] for i in self.D}
 

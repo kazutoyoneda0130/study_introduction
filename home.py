@@ -30,16 +30,16 @@ st.write("""
 - 商品Jを1個生産するのに資源Aが1kg、資源Bが1kg必要
 - 資源Aは合計で100kgまで、資源Bは合計で80kgまで使用可能
 """)
-st.markdown("### 数式での記述")
+st.write("### 数式での記述")
 st.write("xを商品Iの生産量、yを商品Jの生産量とすると、以下のように表現できます。")
-st.markdown("##### 目的関数")
+st.write("##### 目的関数")
 st.latex(r"\max \quad 3x + 2y")
 
-st.markdown("##### 制約条件")
+st.write("##### 制約条件")
 st.latex(r"2x + y \leq 100")
 st.latex(r"x + y \leq 80")
 
-st.markdown("##### コード例とその結果")
+st.write("##### コード例とその結果")
 
 code = '''
 import pulp
