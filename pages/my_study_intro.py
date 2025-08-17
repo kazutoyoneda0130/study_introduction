@@ -1,9 +1,5 @@
-import base64
-from datetime import datetime
-
-import matplotlib.pyplot as plt
-import networkx as nx
 import streamlit as st
+import base64
 
 import my_func as my_func
 
@@ -26,6 +22,7 @@ encoded_pdf = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="800
 st.markdown(encoded_pdf, unsafe_allow_html=True)
 
 st.header("問題例の作成")
+
 if st.toggle('問題例作成'):
     # col1,col2,col3,col4 = st.columns([1,1,1,1])
     col1,col2,col4 = st.columns([1,1,1])
@@ -50,19 +47,21 @@ if st.toggle('問題例作成'):
 
     st.header("解の作成")
     if st.toggle('ルートの作成'):
-        st.write("#### 定式化を選択してください。")
+        st.write("#### 定式化を選択")
         form_options = st.radio("",
                                 list(form_dict.keys()) +["すべてを実行し、計算時間を比較"],
                                 horizontal=True)
+        real_time_display, create_char = st.columns([1,1])
         if form_options == "すべてを実行し、計算時間を比較":
-            for form in reversed(list(form_dict.keys())):
-                if form == "定式化4":
-                    # 結果の図示
-                    sol, fig, ax, solve_time = my_func.create_solution(instance, car_num, car_cap, req_num, form=form_dict[form], display_flag=True)
-                    st.pyplot(fig)
-                else:
-                    sol, solve_time = my_func.create_solution(instance, car_num, car_cap, req_num, form=form_dict[form], display_flag=False)
-                st.write(f"{form} 実行時間:", solve_time, "秒")
+            time_dict = {k:0 for k in form_dict.keys()}
+            for form in form_dict.keys():
+                sol, solve_time = my_func.create_solution(instance, car_num, car_cap, req_num, form=form_dict[form], display_flag=False)
+                time_dict[form] = solve_time
+                with real_time_display:
+                    st.write(f"{form} 実行時間:", solve_time, "秒")
+            with create_char:
+                fig = my_func.create_bar_chart(time_dict)
+                st.plotly_chart(fig)
         else:
             form = form_dict[form_options]
             sol, fig, ax, solve_time = my_func.create_solution(instance, car_num, car_cap, req_num, form, display_flag=True)

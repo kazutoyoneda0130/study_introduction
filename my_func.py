@@ -8,6 +8,7 @@ import pulp
 import matplotlib.pyplot as plt
 from datetime import datetime
 from matplotlib import colors as mcolors
+import plotly.express as px
 
 
 class CreateRideShareProblemInstance:
@@ -371,3 +372,13 @@ def create_solution(instance, car_num, car_cap, req_num, form, display_flag=True
         return sol, fig, ax, solve_time
     else:
         return sol, solve_time
+
+def create_bar_chart(time_dict) -> px.bar: #type: ignore
+    # 計算時間の棒グラフを作成
+    fig = px.bar(
+        x=list(time_dict.keys()),
+        y=list(time_dict.values()),
+        labels={'x': '定式化', 'y': '計算時間 (秒)'},
+        title='定式化ごとの計算時間比較'
+    )
+    return fig
